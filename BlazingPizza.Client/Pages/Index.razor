@@ -17,13 +17,38 @@
     </ul>
 </div>
 
-@if (showingConfigureDialog)
+<div class="sidebar">
+    @if (order.Pizzas.Any())
+    {
+        <div class="order-contents">
+            <h2>Your Order</h2>
+
+            @foreach (var configredPizza in order.Pizzas)
             {
-                <ConfigurePizzaDialog Pizza="configuringPizza" OnCancel="CancelConfigurePizzaDialog" OnConfirm="ConfirmConfigurePizzaDialog"/>
+                <ConfiguredPizzaItem Pizza="configredPizza" OnRemoved="@(() => RemoveConfiguredPizza(configredPizza))" />
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-cart">Choose a pizza<br>to get started</div>
+    }
+
+        <div class="order-total @(order.Pizzas.Any() ? "" : "hidden")">    
+            Total:
+            <span class="total-price">@order.GetFormattedTotalPrice()</span>
+            <button class="btn btn-warning" disabled="@(order.Pizzas.Count == 0)" @onclick="PlaceHolder">
+                Order >
+            </button>
+        </div>
+    </div>
+
+    @if (showingConfigureDialog)
+            {
+    <ConfigurePizzaDialog Pizza="configuringPizza" OnCancel="CancelConfigurePizzaDialog" OnConfirm="ConfirmConfigurePizzaDialog" />
             }
 
-@code
-{
+@code{
     List<PizzaSpecial> specials;
     Pizza configuringPizza;
     bool showingConfigureDialog;
@@ -59,5 +84,16 @@
         configuringPizza = null;
 
         showingConfigureDialog = false;
+    }
+
+    void RemoveConfiguredPizza(Pizza pizza)
+    {
+        order.Pizzas.Remove(pizza);
+    }
+
+    async Task PlaceHolder()
+    {
+        await HttpClient.PostAsJsonAsync("orders", order);
+        order = new Order();
     }
 }
